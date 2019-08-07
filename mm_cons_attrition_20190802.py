@@ -28,18 +28,12 @@ vars01 = ['AccountStatus','Seasoning','Spread','Balance']
 # Subset based on target variables
 mm = mm_int[vars01]
 
-
-#.........................................................................................
+#...................................................................................................
 # KNN
 from sklearn.neighbors import KNeighborsClassifier
 
-# Sample prep
-y = mm[['AccountStatus']].values
-X = mm[['Seasoning','Spread']].values
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=666)
-
 # Initial model
-knn = KNeighborsClassifier(n_neighbors = 2)
+knn = KNeighborsClassifier(n_neighbors = 10)
 knn.fit(X_train, y_train)
 y_pred = knn.predict(X_test)
 knn.score(X_test, y_test)
@@ -72,14 +66,86 @@ plt.ylabel('Accuracy')
 plt.show()
 
 # ROC curve and AUC
-knn = KNeighborsClassifier(n_neighbors=2)
+knn = KNeighborsClassifier(n_neighbors=10)
 knn.fit(X_train, y_train)
 
 y_scores = knn.predict_proba(X_test)
 fpr, tpr, threshold = roc_curve(y_test, y_scores[:,1])
 roc_auc = auc(fpr, tpr)
 
-plt.title('ROC')
+plt.title('ROC KNN')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+
+#...................................................................................................
+# LOGISTIC 
+from sklearn.linear_model import LogisticRegression
+
+# Setup the hyperparameter grid
+c_space = np.logspace(-5, 8, 15)
+param_grid = {'C': c_space}
+
+# Logistic model
+logreg = LogisticRegression()
+logreg_cv = GridSearchCV(logreg, param_grid, cv=5)
+logreg_cv.fit(X_train, y_train)
+y_pred = logreg_cv.predict(X_test)
+
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+print("Tuned Logistic Regression Parameters: {}".format(logreg_cv.best_params_)) 
+print("Best score is {}".format(logreg_cv.best_score_))
+
+# ROC Curve
+y_pred_prob = logreg_cv.predict_proba(X_test)[:,1]
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+roc_auc = auc(fpr, tpr)
+
+# Plot ROC
+plt.title('ROC LOGISTIC')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+
+#...................................................................................................
+# DECISION TREE
+from scipy.stats import randint
+from sklearn.tree import DecisionTreeClassifier
+
+# Setup the parameters and distributions to sample from: param_dist
+param_dist = {"max_depth": [3, None],
+              "max_features": randint(1, 3),
+              "min_samples_leaf": randint(1, 9),
+              "criterion": ["gini", "entropy"]}
+
+# Tree Model
+tree = DecisionTreeClassifier()
+tree_cv = RandomizedSearchCV(tree, param_dist, cv=5)
+tree_cv.fit(X_train, y_train)
+y_pred = tree_cv.predict(X_test)
+
+print("Tuned Decision Tree Parameters: {}".format(tree_cv.best_params_))
+print("Best score is {}".format(tree_cv.best_score_))
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+# ROC Curve and AUC
+y_pred_prob = tree_cv.predict_proba(X_test)[:,1]
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.title('ROC TREE')
 plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
 plt.legend(loc = 'lower right')
 plt.plot([0, 1], [0, 1], 'r--')

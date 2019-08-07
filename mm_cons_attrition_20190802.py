@@ -7,24 +7,23 @@ Created on Fri Aug  2 15:03:42 2019
 @email: gerard.mazi@gmail.com
 """
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import train_test_split, RandomizedSearchCV, GridSearchCV
+from sklearn.metrics import roc_curve, auc, confusion_matrix, classification_report
 
 # Load consumer money market data
 mm_raw = pd.read_csv('mm_in.csv')
 
 # Stratified random sample by customer ID
-mm = mm_raw.groupby('SK_PrimaryCustomerID').apply(lambda x: x.sample(n=1)).reset_index(drop=True)
+mm = mm_raw.groupby('AccountNumber').apply(lambda x: x.sample(n=1)).reset_index(drop=True)
 
 # Set target (CLOSED/INACTIVE/DORMANT = 1; OPEN = 0)
 mm_int.loc[mm_int.AccountStatus == 'OPEN','AccountStatus'] = 0
 mm_int.loc[mm_int.AccountStatus != 0,'AccountStatus'] = 1
 
 # Set target variables
-vars01 = ['AccountStatus','Seasoning','Spread']
+vars01 = ['AccountStatus','Seasoning','Spread','Balance']
 
 # Subset based on target variables
 mm = mm_int[vars01]

@@ -28,6 +28,14 @@ vars01 = ['AccountStatus','Seasoning','Spread','Balance']
 # Subset based on target variables
 mm = mm_int[vars01]
 
+# Parse out dummy variables
+mm = pd.get_dummies(mm, drop_first=True)
+
+# Sample prep
+y = mm['AccountStatus'].values
+X = mm.drop('AccountStatus', axis = 1).values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=666)
+
 #...................................................................................................
 # KNN
 from sklearn.neighbors import KNeighborsClassifier
@@ -119,7 +127,7 @@ plt.xlabel('False Positive Rate')
 plt.show()
 
 #...................................................................................................
-# DECISION TREE
+# CLASSIFICATION TREE
 from scipy.stats import randint
 from sklearn.tree import DecisionTreeClassifier
 
